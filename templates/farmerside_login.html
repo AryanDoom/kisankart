@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Register</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: url("loginimg.png");
+        }
+
+
+        body::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 0;
+        }
+
+        .container {
+            width: 950px;
+            height: 560px;
+            background: white;
+            display: flex;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+
+        .login-box {
+            width: 50%;
+            padding: 50px;
+            background: #ffffff;
+        }
+
+        .login-box h2 {
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #1e3c72;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #162d56;
+        }
+
+
+        .register-box {
+            width: 50%;
+            padding: 40px;
+            background: #f2f5f9;
+            overflow-y: auto;
+        }
+
+        .register-box h2 {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+
+        <div class="login-box">
+            <h2>Login</h2>
+
+            <form action="/login" method="POST">
+
+                <input type="hidden" name="user_type" value="farmer">
+                <div class="input-group">
+                    <input type="text" id="phone" placeholder="+91XXXXXXXXXX">
+<div id="recaptcha-container"></div>
+
+<button onclick="sendOTP()">Send OTP</button>
+
+<br><br>
+
+<input type="text" id="otp" placeholder="Enter OTP">
+<button onclick="verifyOTP()">Verify OTP</button>
+                </div>
+
+                <style>
+                    .terms-box {
+                        color: red;
+                        margin-top: 15px;
+                        font-weight: bold;
+                    }
+
+                    .terms-check {
+                        color: red;
+                        margin-top: 10px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                </style>
+
+
+                <div class="terms-box">
+                    <p> We take 8% in between for transportation and handling charges.</p>
+                </div>
+
+                <div class="terms-check">
+                    <input type="checkbox" name="click" required>
+                    <label>You agree with our Terms and Conditions</label>
+                </div>
+
+                <button type="submit" class="btn">Login</button>
+            </form>
+        </div>
+
+
+        <div class="register-box">
+            <h2>Register</h2>
+
+            <form action="/register" method="POST">
+                <input type="hidden" name="user_type" value="farmer">
+                <div class="input-group">
+                    <input type="text" name="name" placeholder="Full Name" pattern="^[a-zA-Z0-9\s]{2,50}$"
+                        title="2-50 alphanumeric characters only" required>
+                </div>
+
+                <div class="input-group">
+                    <input type="tel" name="phone" placeholder="Phone Number" pattern="\d{10}" maxlength="10"
+                        title="Exactly 10 digits" required>
+                </div>
+
+                <div class="input-group">
+                    <input type="password" name="password" id="reg_password" placeholder="Password" minlength="4"
+                        required oninput="checkMatch()">
+                </div>
+
+                <div class="input-group">
+                    <input type="password" name="confirm_password" id="reg_confirm" placeholder="Confirm Password"
+                        minlength="4" required oninput="checkMatch()">
+                </div>
+                <div id="match_msg" style="font-size: 0.8rem; margin-bottom: 10px; display: none;"></div>
+
+                <div class="row no-gutters mb-3">
+                    <div class="col-6 pr-1">
+                        <input type="text" name="lat" id="lat" class="form-control" placeholder="Latitude" readonly
+                            required style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px;">
+                    </div>
+                    <div class="col-6 pl-1">
+                        <input type="text" name="lng" id="lng" class="form-control" placeholder="Longitude" readonly
+                            required style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px;">
+                    </div>
+                </div>
+
+                <button type="button" class="btn" style="background: #56ab2f; margin-bottom: 5px;"
+                    onclick="getLocation()">Get Current Location</button>
+                <button type="submit" class="btn">Register</button>
+
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition, showError);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function showPosition(position) {
+            document.getElementById("lat").value = position.coords.latitude;
+            document.getElementById("lng").value = position.coords.longitude;
+        }
+
+        function checkMatch() {
+            const p = document.getElementById('reg_password');
+            const c = document.getElementById('reg_confirm');
+            const m = document.getElementById('match_msg');
+            if (c.value.length > 0) {
+                m.style.display = 'block';
+                if (p.value === c.value) {
+                    m.innerHTML = '✔ Passwords match';
+                    m.style.color = 'green';
+                } else {
+                    m.innerHTML = '✖ Passwords do not match';
+                    m.style.color = 'red';
+                }
+            } else {
+                m.style.display = 'none';
+            }
+        }
+
+        function showError(error) {
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("User denied the request for Geolocation.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Location information is unavailable.");
+                    break;
+                case error.TIMEOUT:
+                    alert("The request to get user location timed out.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("An unknown error occurred.");
+                    break;
+            }
+        }
+    </script>
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// 🔹 Replace with your Firebase config
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_MESSAGING_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+  size: 'normal',
+  callback: () => {
+    console.log("Recaptcha verified");
+  }
+});
+
+// 🔹 Send OTP
+window.sendOTP = function() {
+  const phoneNumber = document.getElementById("phone").value;
+
+  signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier)
+    .then((confirmationResult) => {
+      window.confirmationResult = confirmationResult;
+      alert("OTP Sent Successfully!");
+    })
+    .catch((error) => {
+      alert(error.message);
+    });
+};
+
+// 🔹 Verify OTP
+window.verifyOTP = function() {
+  const code = document.getElementById("otp").value;
+
+  window.confirmationResult.confirm(code)
+    .then((result) => {
+      alert("Phone Authentication Successful!");
+      console.log(result.user);
+    })
+    .catch((error) => {
+      alert("Invalid OTP");
+    });
+};
+
+</script>
+</body>
+
+</html>

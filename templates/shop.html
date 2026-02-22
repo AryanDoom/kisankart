@@ -13,9 +13,10 @@
                         <p class="mb-0 text-muted small">Location: {{ product.area }} | Stock: {{ product.qty }}kg</p>
                         <h6 class="mt-2">₹{{ product.price }}/kg</h6>
                     </div>
-                    <form action="{{ url_for('buy_product', product_id=product._id) }}" method="POST">
-                        <button type="submit" class="btn btn-success btn-sm" {{ 'disabled' if product.qty <=0 }}>Buy
-                            1kg</button>
+                    <form action="{{ url_for('add_to_cart', product_id=product._id) }}" method="POST">
+                        <button type="submit" class="btn btn-success btn-sm" {{ 'disabled' if product.qty <=0 }}>
+                            Add to Cart
+                        </button>
                     </form>
                 </div>
                 {% endfor %}

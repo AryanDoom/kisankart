@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Your Cart - KissanKart{% endblock %}
+
+{% block content %}
+<div class="bg-gradient-green">
+    <div class="centering-wrapper">
+        <div class="glass-card" style="max-width: 900px;">
+            <h2 class="text-center mb-4">Your Shopping Cart 🛒</h2>
+
+            {% if cart_items %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Subtotal</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cart_items %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>₹{{ item.price }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>₹{{ item.subtotal }}</td>
+                            <td>
+                                <form action="{{ url_for('remove_from_cart', product_id=item.id) }}" method="POST">
+                                    <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="font-weight-bold">
+                            <td colspan="3" class="text-right">Total:</td>
+                            <td>₹{{ total }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ url_for('shop') }}" class="btn btn-outline-success">Continue Shopping</a>
+                <form action="{{ url_for('checkout') }}" method="POST">
+                    <button type="submit" class="btn btn-success">Proceed to Checkout</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <h4>Your cart is empty!</h4>
+                <p class="text-muted">Start adding some fresh produce from our shop.</p>
+                <a href="{{ url_for('shop') }}" class="btn btn-success mt-3">Go to Shop</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

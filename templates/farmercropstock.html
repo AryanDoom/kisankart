@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crop Entry with Live Stock</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    height: 100vh;
+    display: flex;
+    background: linear-gradient(135deg, #56ab2f, #a8e063);
+}
+
+.form-section {
+    width: 50%;
+    padding: 40px;
+    background: white;
+}
+
+.cart-section {
+    width: 50%;
+    padding: 40px;
+    background: #f1f8e9;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.btn {
+    width: 100%;
+    padding: 12px;
+    background: #2e7d32;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.btn:hover {
+    background: #1b5e20;
+}
+
+.cart-box {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.cart-box p {
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="form-section">
+    <h2>Add Crop Details</h2>
+
+    <form onsubmit="return false;">
+
+        <div class="input-group">
+            <label>Crop Name</label>
+            <input type="text" id="crop_name" oninput="updateCart()">
+        </div>
+
+        <div class="input-group">
+            <label>Area Grown (City)</label>
+            <input type="text" id="area" oninput="updateCart()">
+        </div>
+
+        <div class="input-group">
+            <label>Quantity (kg)</label>
+            <input type="number" id="quantity" oninput="updateCart()">
+        </div>
+
+        <div class="input-group">
+            <label>Price per kg (₹)</label>
+            <input type="number" id="price" oninput="updateCart()">
+        </div>
+
+        <div class="input-group">
+            <label>Upload Farm Photo</label>
+            <input type="file" accept="image/*">
+        </div>
+
+        <button type="submit" class="btn">Submit</button>
+
+    </form>
+</div>
+
+
+<div class="cart-section">
+    <h2>Live Crop Cart</h2>
+
+    <div class="cart-box">
+        <p><strong>Crop:</strong> <span id="cart_crop">-</span></p>
+        <p><strong>Area:</strong> <span id="cart_area">-</span></p>
+        <p><strong>Quantity:</strong> <span id="cart_quantity">0</span> kg</p>
+        <p><strong>Price per kg:</strong> ₹<span id="cart_price">0</span></p>
+        <hr>
+        <p><strong>Total Value:</strong> ₹<span id="cart_total">0</span></p>
+    </div>
+</div>
+
+
+<script>
+function updateCart() {
+
+    let crop = document.getElementById("crop_name").value;
+    let area = document.getElementById("area").value;
+    let quantity = parseFloat(document.getElementById("quantity").value) || 0;
+    let price = parseFloat(document.getElementById("price").value) || 0;
+
+    let total = quantity * price;
+
+    document.getElementById("cart_crop").innerText = crop || "-";
+    document.getElementById("cart_area").innerText = area || "-";
+    document.getElementById("cart_quantity").innerText = quantity;
+    document.getElementById("cart_price").innerText = price;
+    document.getElementById("cart_total").innerText = total.toFixed(2);
+}
+</script>
+
+</body>
+</html>

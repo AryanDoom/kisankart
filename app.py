@@ -1,8 +1,9 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 import requests
 from collections import defaultdict
 from datetime import datetime
+import re
 
 app = Flask(__name__)
 app.secret_key = "kisan_kart_secret"
@@ -46,19 +47,52 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
-def index():
+def index(): #home/main page
     return render_template('index.html')
 
 @app.route('/register/farmer')
 def register_farmer():
-    return redirect(url_for('list_product'))
+    return render_template('farmerside_login.html')
 
-@app.route('/register/customer')
-def register_customer():
-    return redirect(url_for('discover'))
+@app.route('/register', methods=['POST'])
+def register():
+    user_type = request.form.get('user_type')
+    name = request.form.get('name', '').strip()
+    phone = request.form.get('phone', '').strip()
+    password = request.form.get('password')
+    confirm_password = request.form.get('confirm_password')
+    lat = request.form.get('lat')
+    lng = request.form.get('lng')
+    if not re.match(r"^[a-zA-Z0-9\s]{2,50}$", name):
+        flash("Invalid name Please use 2-50 alphanumeric characters.", "danger")
+        return redirect(url_for('register_farmer' if user_type == 'farmer' else 'consumer'))
+    if not re.match(r"^\d{10}$", phone):
+        flash("Phone number must be exactly 10 digits", "danger")
+        return redirect(url_for('register_farmer' if user_type == 'farmer' else 'consumer'))
+    if password != confirm_password:
+        flash("Passwords do not match", "danger")
+        return redirect(url_for('register_farmer' if user_type == 'farmer' else 'consumer'))
 
-@app.route('/login')
+    # Add database connection here
+    # Implement secure password hashing before saving
+    
+    flash("Registration successful! Please login.", "success")
+    return redirect(url_for('register_farmer' if user_type == 'farmer' else 'consumer'))
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'POST':
+        user_type = request.form.get('user_type')
+        phone = request.form.get('phone')
+        password = request.form.get('password')
+
+        #Add database connection here
+        #Placeholder logic
+        if user_type == 'farmer':
+            return redirect(url_for('farmer_dashboard'))
+        else:
+            return redirect(url_for('shop'))
+            
     return redirect(url_for('index'))
 
 @app.route('/logout')
@@ -85,20 +119,25 @@ def farmer():
         }
         global_products.append(new_prod)
         flash(f"Crop '{name}' added successfully!", "success")
-        return redirect(url_for('consumer'))
+        return redirect(url_for('farmer_dashboard'))
 
-    return render_template('list_product.html')
+    return render_template('farmerside_login.html')
+
+@app.route('/farmer/dashboard')
+def farmer_dashboard():
+    return render_template('farmercropstock.html')
 
 @app.route('/consumer')
 def consumer():
+    return render_template('customerside.html', products=global_products)
+
+@app.route('/shop')
+def shop():
     return render_template('shop.html', products=global_products)
 
 @app.route('/product/<product_id>')
 def product_detail(product_id):
     product = next((p for p in global_products if p["_id"] == product_id), None)
-    if not product:
-        flash("Product not found!", "danger")
-        return redirect(url_for('consumer'))
     return render_template('product_detail.html', product=product)
 
 @app.route('/buy/<product_id>', methods=['POST'])
@@ -116,7 +155,7 @@ def buy_product(product_id):
         flash(f"Bought 1 unit of {product['name']}!", "success")
     else:
         flash("Product not available!", "danger")
-    return redirect(url_for('consumer'))
+    return redirect(url_for('shop'))
 
 @app.route('/orders')
 def view_orders():
@@ -125,9 +164,80 @@ def view_orders():
 @app.route('/complete-order/<order_id>', methods=['POST'])
 def complete_order(order_id):
     global global_orders
-    # For demo, just clear the pending orders
     global_orders = []
     flash("Order marked as completed!", "success")
+    return redirect(url_for('view_orders'))
+
+@app.route('/add_to_cart/<product_id>', methods=['POST'])
+def add_to_cart(product_id):
+    if 'cart' not in session:
+        session['cart'] = {}
+    
+    cart = session['cart']
+    if product_id in cart:
+        cart[product_id] += 1
+    else:
+        cart[product_id] = 1
+    
+    session['cart'] = cart
+    product = next((p for p in global_products if p["_id"] == product_id), None)
+    flash(f"Added {product['name'] if product else 'item'} to cart!", "success")
+    return redirect(url_for('shop'))
+
+@app.route('/cart')
+def view_cart():
+    cart = session.get('cart', {})
+    cart_items = []
+    total = 0
+    for product_id, quantity in cart.items():
+        product = next((p for p in global_products if p["_id"] == product_id), None)
+        if product:
+            item_total = product['price'] * quantity
+            total += item_total
+            cart_items.append({
+                'id': product_id,
+                'name': product['name'],
+                'price': product['price'],
+                'quantity': quantity,
+                'subtotal': item_total
+            })
+    return render_template('cart.html', cart_items=cart_items, total=total)
+
+@app.route('/remove_from_cart/<product_id>', methods=['POST'])
+def remove_from_cart(product_id):
+    cart = session.get('cart', {})
+    if product_id in cart:
+        del cart[product_id]
+        session['cart'] = cart
+        flash("Item removed from cart.", "info")
+    return redirect(url_for('view_cart'))
+
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    # Convert cart to orders
+    cart = session.get('cart', {})
+    if not cart:
+        flash("Your cart is empty!", "warning")
+        return redirect(url_for('shop'))
+    
+    for product_id, quantity in cart.items():
+        product = next((p for p in global_products if p["_id"] == product_id), None)
+        if product:
+            if product['qty'] >= quantity:
+                product['qty'] -= quantity
+                global_orders.append({
+                    "product_name": product['name'],
+                    "qty": quantity,
+                    "total_price": product['price'] * quantity,
+                    "status": "ordered",
+                    "created_at": datetime.now()
+                })
+            else:
+                flash(f"Not enough stock for {product['name']}", "danger")
+                return redirect(url_for('view_cart'))
+    
+    session['cart'] = {}
+    flash("Order placed successfully!", "success")
     return redirect(url_for('view_orders'))
 
 @app.route('/info')
