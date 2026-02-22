@@ -4,6 +4,8 @@ import requests
 from collections import defaultdict
 from datetime import datetime
 import re
+import db.main as db
+db.doshidd
 
 app = Flask(__name__)
 app.secret_key = "kisan_kart_secret"
