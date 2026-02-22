@@ -22,6 +22,7 @@ except Exception as e:
 db = DB_CLIENT["dev"]
 FARMERS_DB = db['farmers']
 PRODUCT_DB = db['product']
+BUCKETS_DB = db['buckets']
 USER_CREDS_DB = db['user_creds']
 
 class Location:
@@ -89,10 +90,52 @@ class DuplicateEntry(Exception):
         self.trying = trying
         self.existing = existing
 
+class ProductNotFound(Exception):
+    def __init__(self, message, trying,existing): 
+        super().__init__(message)
+            
+        self.trying = trying
+        self.existing = existing
+
 class OrderItem:
     def __init__(self,product_id:uuid.UUID,qty:int):
         self.product_id = product_id
         self.qty = qty
+        self.order_item_id = uuid.uuid4()
+
+    def __dict__(self):
+        return {"product_id":self.product_id,"qty":self.qty,"_id":self.order_item_id}
+
+    @staticmethod
+    def from_dict(d):
+        a = OrderItem(d["product_id"],d["qty"])
+        a.order_item_id = d['_id']
+        return a
+
+
+class Order:
+    def __iter__(self,customer_id:uuid.UUID,orders:[OrderItem]=[]):
+        self.customer_id = customer_id
+        self.items = orders
+        self.order_id  = uuid.uuid4()
+
+    def add_item(self,order_item:OrderItem):
+        for item in self.items:
+            if item.product_id == order_item.product_id:
+                item.qty += order_item.qty
+                return
+        self.items.append(order_item)
+
+    def __dict__(self):
+        return {"customer_id":self.customer_id,"items":[x.__dict__ for x in self.items],"_id":self.order_id}
+
+    @staticmethod
+    def from_dict(d):
+        a = OrderItem(d["customer_id"])
+        a.order_id = d["_id"]
+        for x in d.items:
+            a.items.append(OrderItem.from_dict(x))
+        return a
 
 class Customer:
     def __init__(self,name:str,phone_num:int,loc:Location,current_bucket:[OrderItem]):
@@ -110,7 +153,7 @@ class Customer:
         c.id = d['_id']
         return c
 
-async def try_add_customer_to_db(customer:Customer):
+def try_add_customer_to_db(customer:Customer):
     if c:=CUSTOMERS_DB.find_one({"_id":customer.id}):
         raise DuplicateEntry(f"Customer with id {customer.id} already exists.",customer,c)
     CUSTOMERS_DB.insert_one(customer.__dict__)
@@ -125,12 +168,13 @@ def try_add_farmer_to_db(farmer:Farmer):
 
     FARMERS_DB.insert_one(farmer.__dict__)
 
-async def get_products_from_farmer(farmer:Farmer,get_expired:bool=True):
+def get_products_from_farmer(farmer:Farmer,get_expired:bool=True):
     fid = farmer.id
-    filter_ = {"_id":fid}
+    filter_ = {"farmer_id":fid}
+    print(filter_)
     if not get_expired:
         filter_["exp_date"] = {"$gt":datetime.datetime.now().timestamp()}
-    print(filter_)
+
     res = PRODUCT_DB.find(filter_)
     out = []
     for p in res:
@@ -139,21 +183,66 @@ async def get_products_from_farmer(farmer:Farmer,get_expired:bool=True):
     
     return out
 
-async def add_product(p:Product):
+def add_product(p:Product):
     # TODO: check if farmer exists
     if f:= PRODUCT_DB.find_one({"_id":p.id}):
         raise DuplicateEntry(f"product with id {p.id} already exists.",None,None)
     PRODUCT_DB.insert_one(p.__dict__)
 
-async def doshidd():
-    """c
-    farmer.id = "1"
-    await try_add_farmer_to_db(farmer)
-    """
-    p = Product(uuid.uuid4(),"balls",Location(1,1),12.0,12.0,Image.new('RGB',(10,10)),int(datetime.datetime.now().timestamp()))
-    p.farmer_id = '1'
-    farer = Farmer("balls",123456789,Location(12.0,12.0),Image.new('RGB',(10,10)),"yoo whaddup")
-    farer.id = '1'
-    print(str((await get_products_from_farmer(farer))[0]))
+def get_bucket(customer_id:uuid.UUID):
+    if f:=BUCKETS_DB.find_one({"_id":p.id}):
+        return Order.from_dict(f)
+    return None
 
-asyncio.run(doshidd())
+def add_to_bucket(customer_id:uuid.UUID,item:OrderItem):
+    b = get_bucket(customer_id)
+    if not b:
+        b = Order(customer_id)
+    b.add_item(item)
+    BUCKETS_DB.insert_one(b.__dict__)
+
+def doshidd():
+    """Test adding a farmer and a product to the database"""
+
+    # Create test objects
+    test_location = Location(1.2345, 6.7890)  # Random coordinates for location
+    test_farmer = Farmer(
+        name="John Doe",
+        phone_num=1234567890,
+        location=test_location,
+        profile_pic=Image.new("RGB", (100, 100)),  # Placeholder image
+        bio="A passionate farmer!"
+    )
+
+    # Try adding the farmer to the database
+    try:
+        try_add_farmer_to_db(test_farmer)
+        print(f"Farmer {test_farmer.name} added successfully!")
+    except DuplicateEntry as e:
+        print(f"Error adding farmer: {e.message}")
+
+    # Create a product for the farmer
+    test_product = Product(
+        farmer_id=test_farmer.id,
+        name="Fresh Tomatoes",
+        location=test_location,
+        price_per_kg=5.0,
+        stock_in_kg=100,
+        product_image=Image.new("RGB", (10, 10)),  # Placeholder image
+        exp_date=int(datetime.datetime.now().timestamp()) + 3600  # 1 hour from now
+    )
+
+    # Try adding the product to the database
+    try:
+        add_product(test_product)
+        print(f"Product {test_product.name} added successfully!")
+    except DuplicateEntry as e:
+        print(f"Error adding product: {e.message}")
+
+    # Optionally, you could also test fetching products from the farmer
+    products = get_products_from_farmer(test_farmer)
+    print(test_farmer.id,products)
+    for product in products:
+        print(f"Product found: {product}")
+
+doshidd()
