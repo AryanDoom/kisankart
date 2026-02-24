@@ -214,6 +214,21 @@ def remove_from_cart(product_id):
         flash("Item removed from cart.", "info")
     return redirect(url_for('view_cart'))
 
+@app.route('/payment')
+def payment_gateway():
+    cart = session.get('cart', {})
+    total = 0
+    for product_id, quantity in cart.items():
+        product = next((p for p in global_products if p["_id"] == product_id), None)
+        if product:
+            total += product['price'] * quantity
+            
+    if total == 0:
+        flash("Your cart is empty!", "warning")
+        return redirect(url_for('shop'))
+        
+    return render_template('payment.html', total=total)
+
 @app.route('/checkout', methods=['POST'])
 def checkout():
     # Convert cart to orders
@@ -252,7 +267,7 @@ def weather_api():
     if not city:
         return jsonify({"error": "No city provided"}), 400
     
-    api_key = "0940f82f8b3d1a696b7afb88cf181c67"
+    api_key = os.getenv("WEATHER_API_KEY")
     if not api_key:
         return jsonify({"error": "API key not configured"}), 500
         

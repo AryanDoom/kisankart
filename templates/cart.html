@@ -47,9 +47,7 @@
 
             <div class="d-flex justify-content-between mt-4">
                 <a href="{{ url_for('shop') }}" class="btn btn-outline-success">Continue Shopping</a>
-                <form action="{{ url_for('checkout') }}" method="POST">
-                    <button type="submit" class="btn btn-success">Proceed to Checkout</button>
-                </form>
+                <a href="{{ url_for('payment_gateway') }}" class="btn btn-success">Proceed to Checkout</a>
             </div>
             {% else %}
             <div class="text-center py-5">

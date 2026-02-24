@@ -243,7 +243,50 @@ Extra (xl) large devices (large desktops, 1200px and up)
 @media (min-width: 1200px) { ... }
 */
 
+\/* Crop Calendar Stage Colors */
+.stage-sowing {
+  background-color: #c8e6c9; /* light green */
+}
 
+.stage-growing {
+  background-color: #81c784; /* green */
+  color: #fff;
+}
+
+.stage-fertilizing {
+  background-color: #64b5f6; /* blue */
+  color: #fff;
+}
+
+.stage-harvest {
+  background-color: #ffd54f; /* yellow */
+}
+
+.stage-box {
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: inline-block;
+  margin: 2px 0;
+}
+details summary {
+  cursor: pointer;
+}
+
+details summary:hover {
+  color: #2e7d32;
+}
+
+details small {
+  line-height: 1.6;
+}
+details summary {
+    cursor: pointer;
+    font-size: 15px;
+}
+
+details[open] summary {
+    color: #2e7d32;
+}
 
 
 

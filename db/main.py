@@ -49,7 +49,7 @@ class Farmer:
 
     def __str__(self):
         return str(self.__dict__)
-     
+    
     def __repr(self):
         return self.__dict__
         
@@ -79,7 +79,7 @@ class Product:
 
     def __str__(self):
         return str(self.__dict__)
-     
+    
     def __repr(self):
         return self.__dict__
 
